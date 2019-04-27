@@ -1,9 +1,10 @@
 go-difflib
 ==========
 
-THIS PACKAGE IS NO LONGER MAINTAINED.
-
-At this point, I have no longer the time nor the interest to work on go-difflib. I apologize for the inconvenience.
+This is a fork of
+[`github.com/pmezard/go-difflib`](https://github.com/pmezard/go-difflib) for
+use with [`github.com/twpayne/chezmoi`](https://github.com/twpayne/chezmoi).
+The upstream package is no longer maintained.
 
 [![GoDoc](https://godoc.org/github.com/pmezard/go-difflib/difflib?status.svg)](https://godoc.org/github.com/pmezard/go-difflib/difflib)
 
