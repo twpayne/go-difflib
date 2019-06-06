@@ -23,6 +23,14 @@ import (
 	"strings"
 )
 
+var (
+	rangeFormat       = newFormat("@@ -%s +%s @@%s", "\x1b[36m", "\x1b[0m")
+	removeFormat      = newFormat("-%s", "\x1b[31m", "\x1b[0m")
+	removeLabelFormat = newFormat("--- %s%s%s", "\x1b[1m", "\x1b[0m")
+	addFormat         = newFormat("+%s", "\x1b[32m", "\x1b[0m")
+	addLabelFormat    = newFormat("+++ %s%s%s", "\x1b[1m", "\x1b[0m")
+)
+
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -95,6 +103,13 @@ type SequenceMatcher struct {
 	fullBCount     map[string]int
 	bPopular       map[string]struct{}
 	opCodes        []OpCode
+}
+
+func newFormat(plain, pre, post string) *format {
+	return &format{
+		plain:   plain,
+		colored: pre + plain + post,
+	}
 }
 
 func NewMatcher(a, b []string) *SequenceMatcher {
@@ -538,6 +553,37 @@ type UnifiedDiff struct {
 	Colored  bool     // Whether or not to use ANSI color in output
 }
 
+type format struct {
+	plain   string
+	colored string
+}
+
+type formats struct {
+	rangeUnified string
+	remove       string
+	removeLabel  string
+	add          string
+	addLabel     string
+}
+
+func (diff UnifiedDiff) formats() *formats {
+	f := new(formats)
+	if diff.Colored {
+		f.rangeUnified = rangeFormat.colored
+		f.remove = removeFormat.colored
+		f.removeLabel = removeLabelFormat.colored
+		f.add = addFormat.colored
+		f.addLabel = addLabelFormat.colored
+	} else {
+		f.rangeUnified = rangeFormat.plain
+		f.remove = removeFormat.plain
+		f.removeLabel = removeLabelFormat.plain
+		f.add = addFormat.plain
+		f.addLabel = addLabelFormat.plain
+	}
+	return f
+}
+
 // Compare two sequences of lines; generate the delta as a unified diff.
 //
 // Unified diffs are a compact way of showing line changes and a few
@@ -573,13 +619,7 @@ func WriteUnifiedDiff(writer io.Writer, diff UnifiedDiff) error {
 		diff.Eol = "\n"
 	}
 
-	removeFormat := "-%s"
-	addFormat := "+%s"
-
-	if diff.Colored {
-		removeFormat = "\x1b[31m-%s\x1b[0m"
-		addFormat = "\x1b[32m+%s\x1b[0m"
-	}
+	f := diff.formats()
 
 	started := false
 	m := NewMatcher(diff.A, diff.B)
@@ -595,11 +635,11 @@ func WriteUnifiedDiff(writer io.Writer, diff UnifiedDiff) error {
 				toDate = "\t" + diff.ToDate
 			}
 			if diff.FromFile != "" || diff.ToFile != "" {
-				err := wf("--- %s%s%s", diff.FromFile, fromDate, diff.Eol)
+				err := wf(f.removeLabel, diff.FromFile, fromDate, diff.Eol)
 				if err != nil {
 					return err
 				}
-				err = wf("+++ %s%s%s", diff.ToFile, toDate, diff.Eol)
+				err = wf(f.addLabel, diff.ToFile, toDate, diff.Eol)
 				if err != nil {
 					return err
 				}
@@ -608,9 +648,10 @@ func WriteUnifiedDiff(writer io.Writer, diff UnifiedDiff) error {
 		first, last := g[0], g[len(g)-1]
 		range1 := formatRangeUnified(first.I1, last.I2)
 		range2 := formatRangeUnified(first.J1, last.J2)
-		if err := wf("@@ -%s +%s @@%s", range1, range2, diff.Eol); err != nil {
+		if err := wf(f.rangeUnified, range1, range2, diff.Eol); err != nil {
 			return err
 		}
+
 		for _, c := range g {
 			i1, i2, j1, j2 := c.I1, c.I2, c.J1, c.J2
 			if c.Tag == 'e' {
@@ -623,14 +664,14 @@ func WriteUnifiedDiff(writer io.Writer, diff UnifiedDiff) error {
 			}
 			if c.Tag == 'r' || c.Tag == 'd' {
 				for _, line := range diff.A[i1:i2] {
-					if err := ws(fmt.Sprintf(removeFormat, line)); err != nil {
+					if err := ws(fmt.Sprintf(f.remove, line)); err != nil {
 						return err
 					}
 				}
 			}
 			if c.Tag == 'r' || c.Tag == 'i' {
 				for _, line := range diff.B[j1:j2] {
-					if err := ws(fmt.Sprintf(addFormat, line)); err != nil {
+					if err := ws(fmt.Sprintf(f.add, line)); err != nil {
 						return err
 					}
 				}
