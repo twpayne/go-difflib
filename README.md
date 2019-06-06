@@ -6,7 +6,7 @@ This is a fork of
 use with [`github.com/twpayne/chezmoi`](https://github.com/twpayne/chezmoi).
 The upstream package is no longer maintained.
 
-[![GoDoc](https://godoc.org/github.com/pmezard/go-difflib/difflib?status.svg)](https://godoc.org/github.com/pmezard/go-difflib/difflib)
+[![GoDoc](https://godoc.org/github.com/twpayne/go-difflib/difflib?status.svg)](https://godoc.org/github.com/twpayne/go-difflib/difflib)
 
 Go-difflib is a partial port of python 3 difflib package. Its main goal
 was to make unified and context diff available in pure Go, mostly for
@@ -21,7 +21,7 @@ The following class and functions (and related tests) have be ported:
 ## Installation
 
 ```bash
-$ go get github.com/pmezard/go-difflib/difflib
+$ go get github.com/twpayne/go-difflib/difflib
 ```
 
 ### Quick Start
